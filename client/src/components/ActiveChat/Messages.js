@@ -11,7 +11,7 @@ const Messages = (props) => {
     const msg = messages.sort(function(a, b){ return moment(a.createdAt) - moment(b.createdAt) });
 
     setFormattedMsg(msg);
-  }, []);
+  }, [messages]);
 
   return (
     <Box>
