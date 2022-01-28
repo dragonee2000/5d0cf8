@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import { Box } from "@material-ui/core";
 import { Input, Header, Messages } from "./index";
@@ -23,7 +23,17 @@ const useStyles = makeStyles(() => ({
 const ActiveChat = (props) => {
   const classes = useStyles();
   const { user } = props;
-  const conversation = props.conversation || {};
+  // const conversation = props.conversation || {};
+  const [conversation, setConversation] = useState(props.conversation || {})
+
+  const addMessageToActive = (body, conversation) => {
+    let convo = conversation;
+    body.createdAt = new Date().toISOString();
+    body.id = conversation.id
+    convo.messages.push(body);
+    console.log(convo)
+    setConversation(convo);
+  }
 
   return (
     <Box className={classes.root}>
@@ -43,6 +53,7 @@ const ActiveChat = (props) => {
               otherUser={conversation.otherUser}
               conversationId={conversation.id}
               user={user}
+              newMessage={(body) => addMessageToActive(body, conversation)}
             />
           </Box>
         </>
