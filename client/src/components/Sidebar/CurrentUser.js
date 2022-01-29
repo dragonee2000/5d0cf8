@@ -64,7 +64,7 @@ const CurrentUser = (props) => {
           <MoreHorizIcon classes={{ root: classes.ellipsis }} />
         </IconButton>
       </Box>
-      <Menu
+      {/* <Menu
       id="user-menu"
       anchorEl={anchorEl}
       keepMounted
@@ -72,7 +72,7 @@ const CurrentUser = (props) => {
       onClose={handleClose}
       >
         <MenuItem onClick={handleLogout}>Logout</MenuItem>
-      </Menu>
+      </Menu> */}
     </Box>
   );
 };

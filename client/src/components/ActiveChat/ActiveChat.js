@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import { Box } from "@material-ui/core";
 import { Input, Header, Messages } from "./index";
 import { connect } from "react-redux";
+import { fetchConversations } from "../../store/utils/thunkCreators";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -22,18 +23,19 @@ const useStyles = makeStyles(() => ({
 
 const ActiveChat = (props) => {
   const classes = useStyles();
-  const { user } = props;
+  const { user, fetchConversations} = props;
   // const conversation = props.conversation || {};
-  const [conversation, setConversation] = useState(props.conversation || {})
+  const [conversation, setConversation] = useState({})
+  const [messages, setMessages] = useState({})
 
-  const addMessageToActive = (body, conversation) => {
-    let convo = conversation;
-    body.createdAt = new Date().toISOString();
-    body.id = conversation.id
-    convo.messages.push(body);
-    console.log(convo)
-    setConversation(convo);
-  }
+  useEffect(() => {
+    if (props.conversation) {
+      setConversation(props.conversation);
+      if (props.conversation.otherUser) {
+        setMessages(props.conversation.messages)
+      }
+    }
+  }, [props.conversation]);
 
   return (
     <Box className={classes.root}>
@@ -45,7 +47,7 @@ const ActiveChat = (props) => {
           />
           <Box className={classes.chatContainer}>
             <Messages
-              messages={conversation.messages}
+              messages={messages}
               otherUser={conversation.otherUser}
               userId={user.id}
             />
@@ -53,7 +55,8 @@ const ActiveChat = (props) => {
               otherUser={conversation.otherUser}
               conversationId={conversation.id}
               user={user}
-              newMessage={(body) => addMessageToActive(body, conversation)}
+              newMessage={() => fetchConversations()}
+              // newMessage={(body) => addMessageToActive(body, conversation, user)}
             />
           </Box>
         </>
@@ -73,4 +76,12 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps, null)(ActiveChat);
+const mapDispatchToProps = (dispatch) => {
+  return {
+    fetchConversations: () => {
+      dispatch(fetchConversations());
+    }
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(ActiveChat);
