@@ -3,7 +3,6 @@ import { makeStyles } from "@material-ui/core/styles";
 import { Box } from "@material-ui/core";
 import { Input, Header, Messages } from "./index";
 import { connect } from "react-redux";
-import { fetchConversations } from "../../store/utils/thunkCreators";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -23,19 +22,8 @@ const useStyles = makeStyles(() => ({
 
 const ActiveChat = (props) => {
   const classes = useStyles();
-  const { user, fetchConversations} = props;
-  // const conversation = props.conversation || {};
-  const [conversation, setConversation] = useState({})
-  const [messages, setMessages] = useState({})
-
-  useEffect(() => {
-    if (props.conversation) {
-      setConversation(props.conversation);
-      if (props.conversation.otherUser) {
-        setMessages(props.conversation.messages)
-      }
-    }
-  }, [props.conversation]);
+  const { user } = props;
+  const conversation = props.conversation || {};
 
   return (
     <Box className={classes.root}>
@@ -47,7 +35,7 @@ const ActiveChat = (props) => {
           />
           <Box className={classes.chatContainer}>
             <Messages
-              messages={messages}
+              messages={conversation.messages}
               otherUser={conversation.otherUser}
               userId={user.id}
             />
@@ -55,8 +43,6 @@ const ActiveChat = (props) => {
               otherUser={conversation.otherUser}
               conversationId={conversation.id}
               user={user}
-              newMessage={() => fetchConversations()}
-              // newMessage={(body) => addMessageToActive(body, conversation, user)}
             />
           </Box>
         </>
@@ -76,12 +62,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-const mapDispatchToProps = (dispatch) => {
-  return {
-    fetchConversations: () => {
-      dispatch(fetchConversations());
-    }
-  };
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(ActiveChat);
+export default connect(mapStateToProps, null)(ActiveChat);
