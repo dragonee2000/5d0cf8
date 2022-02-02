@@ -46,7 +46,7 @@ router.get("/", async (req, res, next) => {
         },
       ],
     });
-
+    console.log(userId);
     for (let i = 0; i < conversations.length; i++) {
       const convo = conversations[i];
       const convoJSON = convo.toJSON();
@@ -67,9 +67,37 @@ router.get("/", async (req, res, next) => {
         convoJSON.otherUser.online = false;
       }
 
+      let cont = true;
+      let lastReadID = -1;
+      let otherUserLastReadID = -1;
+      let unread = 0;
+      // console.log(convoJSON)
+      for (let j = 0; j < convoJSON.messages.length && cont; j++) {
+        if (convoJSON.messages[j].senderId === userId && convoJSON.messages[j].read){
+          otherUserLastReadID = convoJSON.messages[j].id;
+        } 
+        else if (convoJSON.messages[j].senderId !== userId) {
+          if (convoJSON.messages[j].read) {
+          lastReadID = convoJSON.messages[j].id;
+          } else unread++;
+        }
+        else if (convoJSON.messages[j].senderId === userId && !convoJSON.messages[j].read
+          && (convoJSON.messages[j].senderId !== userId && !convoJSON.messages[j].read)
+          ){
+          cont = false;
+        } 
+      }
+
       // set properties for notification count and latest message preview
       convoJSON.latestMessageText = convoJSON.messages[0].text;
+      convoJSON.otherUserLastReadID = otherUserLastReadID;
+      convoJSON.lastReadID = lastReadID
+      convoJSON.unread = unread
+
+
+      console.log(convoJSON)
       conversations[i] = convoJSON;
+
     }
 
     res.json(conversations);
