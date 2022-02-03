@@ -46,7 +46,7 @@ router.get("/", async (req, res, next) => {
         },
       ],
     });
-    console.log(userId);
+
     for (let i = 0; i < conversations.length; i++) {
       const convo = conversations[i];
       const convoJSON = convo.toJSON();
@@ -71,7 +71,7 @@ router.get("/", async (req, res, next) => {
       let lastReadID = -1;
       let otherUserLastReadID = -1;
       let unread = 0;
-      // console.log(convoJSON)
+
       for (let j = 0; j < convoJSON.messages.length && cont; j++) {
         if (convoJSON.messages[j].senderId === userId && convoJSON.messages[j].read){
           otherUserLastReadID = convoJSON.messages[j].id;
@@ -93,11 +93,7 @@ router.get("/", async (req, res, next) => {
       convoJSON.otherUserLastReadID = otherUserLastReadID;
       convoJSON.lastReadID = lastReadID
       convoJSON.unread = unread
-
-
-      console.log(convoJSON)
       conversations[i] = convoJSON;
-
     }
 
     res.json(conversations);
@@ -105,5 +101,54 @@ router.get("/", async (req, res, next) => {
     next(error);
   }
 });
+
+// set messages to read
+router.put("/read", async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.sendStatus(401);
+    }
+    const userId = req.user.id;
+    const otherUserId = req.body.otherUser
+
+    const conversation = await Conversation.findOne({
+      where: {
+        user1Id: {
+          [Op.or]: [userId, otherUserId]
+        },
+        user2Id: {
+          [Op.or]: [userId, otherUserId]
+        }
+      },
+      include: [
+        { model: Message, order: ["createdAt", "DESC"] },
+      ]
+    });
+
+    if (!conversation) {
+      return res.sendStatus(401)
+    }
+
+    const convoJSON = conversation.toJSON();
+
+    let messageIDs = [];
+    let cont = true;
+    for(let j = 0; j < convoJSON.messages.length && cont; j++) {
+      if (convoJSON.messages[j].senderId === otherUserId) {
+        messageIDs.push(convoJSON.messages[j].id);
+      }
+    }
+
+    Message.update({ read: true }, {
+      where: {
+        id: messageIDs
+      }
+    })
+    
+    res.sendStatus(200);
+  } catch (error) {
+    next(error);
+  }
+})
 
 module.exports = router;
