@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const { User, Conversation, Message } = require("../../db/models");
-const { Op } = require("sequelize");
+const { Op, Sequelize, where } = require("sequelize");
 const onlineUsers = require("../../onlineUsers");
 
 // get all conversations for a user, include latest message text for preview, and all messages
@@ -18,10 +18,23 @@ router.get("/", async (req, res, next) => {
           user2Id: userId,
         },
       },
-      attributes: ["id"],
+      attributes: {
+        include: [
+          "id",
+          // [Sequelize.fn("COUNT", Sequelize.col("messages.read")), "read"]
+          // [Sequelize.where(Sequelize.fn("COUNT", Sequelize.col("messages.read"), false)), "unread"]
+          // [Sequelize.where(Sequelize.col("messages.read"), false), "unread"]
+          
+         [Sequelize.fn("COUNT", Sequelize.where(Sequelize.col("messages.read"), false)), "unread"]
+          // [Sequelize.where(Sequelize.fn("COUNT", ), ), ], 
+        ],
+      },
       order: [[Message, "createdAt", "DESC"]],
       include: [
-        { model: Message, order: ["createdAt", "DESC"] },
+        {
+          model: Message,
+          order: ["createdAt", "DESC"],
+        },
         {
           model: User,
           as: "user1",
@@ -45,11 +58,13 @@ router.get("/", async (req, res, next) => {
           required: false,
         },
       ],
+      group: ["conversation.id", "messages.id", "user1.id", "user2.id"],
     });
 
     for (let i = 0; i < conversations.length; i++) {
       const convo = conversations[i];
       const convoJSON = convo.toJSON();
+      // console.log(convoJSON);
 
       // set a property "otherUser" so that frontend will have easier access
       if (convoJSON.user1) {
@@ -72,28 +87,36 @@ router.get("/", async (req, res, next) => {
       let otherUserLastReadID = -1;
       let unread = 0;
 
-      for (let j = 0; j < convoJSON.messages.length && cont; j++) {
-        if (convoJSON.messages[j].senderId === userId && convoJSON.messages[j].read){
+      let count = 0;
+      console.log(userId)
+      for (let j = convoJSON.messages.length - 1; j > -1 && cont; j--) {
+        if (
+          convoJSON.messages[j].senderId === userId &&
+          convoJSON.messages[j].read
+        ) {
           otherUserLastReadID = convoJSON.messages[j].id;
-        } 
-        else if (convoJSON.messages[j].senderId !== userId) {
+        } else if (convoJSON.messages[j].senderId !== userId) {
           if (convoJSON.messages[j].read) {
-          lastReadID = convoJSON.messages[j].id;
+            lastReadID = convoJSON.messages[j].id;
           } else unread++;
-        }
-        else if (convoJSON.messages[j].senderId === userId && !convoJSON.messages[j].read
-          && (convoJSON.messages[j].senderId !== userId && !convoJSON.messages[j].read)
-          ){
-          cont = false;
         } 
+        // else if (
+        //   (convoJSON.messages[j].senderId === userId &&
+        //   !convoJSON.messages[j].read) &&
+        //   (convoJSON.messages[j].senderId !== userId &&
+        //   !convoJSON.messages[j].read)
+        // ) {
+        //   cont = false;
+        // }
       }
 
       // set properties for notification count and latest message preview
       convoJSON.latestMessageText = convoJSON.messages[0].text;
       convoJSON.otherUserLastReadID = otherUserLastReadID;
-      convoJSON.lastReadID = lastReadID
-      convoJSON.unread = unread
+      convoJSON.lastReadID = lastReadID;
+      convoJSON.unread = unread;
       conversations[i] = convoJSON;
+      console.log(convoJSON)
     }
 
     res.json(conversations);
@@ -109,46 +132,47 @@ router.put("/read", async (req, res, next) => {
       return res.sendStatus(401);
     }
     const userId = req.user.id;
-    const otherUserId = req.body.otherUser
+    const otherUserId = req.body.otherUser;
 
     const conversation = await Conversation.findOne({
       where: {
         user1Id: {
-          [Op.or]: [userId, otherUserId]
+          [Op.or]: [userId, otherUserId],
         },
         user2Id: {
-          [Op.or]: [userId, otherUserId]
-        }
+          [Op.or]: [userId, otherUserId],
+        },
       },
-      include: [
-        { model: Message, order: ["createdAt", "DESC"] },
-      ]
+      include: [{ model: Message, order: ["createdAt", "DESC"] }],
     });
 
     if (!conversation) {
-      return res.sendStatus(401)
+      return res.sendStatus(403);
     }
 
     const convoJSON = conversation.toJSON();
 
     let messageIDs = [];
     let cont = true;
-    for(let j = 0; j < convoJSON.messages.length && cont; j++) {
+    for (let j = 0; j < convoJSON.messages.length && cont; j++) {
       if (convoJSON.messages[j].senderId === otherUserId) {
         messageIDs.push(convoJSON.messages[j].id);
       }
     }
 
-    Message.update({ read: true }, {
-      where: {
-        id: messageIDs
+    Message.update(
+      { read: true },
+      {
+        where: {
+          id: messageIDs,
+        },
       }
-    })
-    
-    res.sendStatus(200);
+    );
+
+    res.sendStatus(204);
   } catch (error) {
     next(error);
   }
-})
+});
 
 module.exports = router;
