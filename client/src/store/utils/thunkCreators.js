@@ -84,7 +84,7 @@ export const fetchConversations = () => async (dispatch) => {
   }
 };
 
-const setReadMessages = async (body) => {
+const readMessages = async (body) => {
   const { data } = await axios.put("/api/conversations/read", body);
   return data;
 }
@@ -121,7 +121,7 @@ export const postMessage = (body) => async (dispatch) => {
 
 export const readConvo = (body) => async (dispatch) => {
   try {
-    const data = await setReadMessages(body);
+    await readMessages(body);
     
   } catch (error) {
     console.error(error);

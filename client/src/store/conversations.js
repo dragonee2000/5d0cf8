@@ -1,6 +1,5 @@
 import {
   addNewConvoToStore,
-  setReadMessage,
   addOnlineUserToStore,
   addSearchedUsersToStore,
   removeOfflineUserFromStore,
@@ -10,7 +9,6 @@ import {
 // ACTIONS
 
 const GET_CONVERSATIONS = "GET_CONVERSATIONS";
-const SET_READ_CHAT = "SET_READ_CHAT";
 const SET_MESSAGE = "SET_MESSAGE";
 const ADD_ONLINE_USER = "ADD_ONLINE_USER";
 const REMOVE_OFFLINE_USER = "REMOVE_OFFLINE_USER";
@@ -26,13 +24,6 @@ export const gotConversations = (conversations) => {
     conversations,
   };
 };
-
-export const setReadChat = (id) => {
-  return {
-    type: SET_READ_CHAT,
-    id
-  }
-}
 
 export const setNewMessage = (message, sender) => {
   return {
@@ -82,8 +73,6 @@ const reducer = (state = [], action) => {
   switch (action.type) {
     case GET_CONVERSATIONS:
       return action.conversations;
-    // case SET_READ_CHAT: 
-    //   return setReadMessage(state, action.id);
     case SET_MESSAGE:
       return addMessageToStore(state, action.payload);
     case ADD_ONLINE_USER: {

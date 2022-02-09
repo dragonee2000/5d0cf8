@@ -43,10 +43,11 @@ const Chat = (props) => {
       props.setActiveChat(conversation.otherUser.username), 
       props.readConvo(reqBody)
     ])
+    setUnreadMsg(0)
   };
 
   return (
-    <Box onClick={() => {handleClick(conversation); setUnreadMsg(0)}} className={classes.root}>
+    <Box onClick={() => {handleClick(conversation)}} className={classes.root}>
       <BadgeAvatar
         photoUrl={otherUser.photoUrl}
         username={otherUser.username}

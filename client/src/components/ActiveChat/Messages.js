@@ -10,13 +10,22 @@ const Messages = (props) => {
     <Box>
       {messages.map((message) => {
         const time = moment(message.createdAt).format("h:mm");
-
         return message.senderId === userId ? (
-          <>
-          <SenderBubble lastRead={lastReadID === message.id ? true : false} key={message.id} text={message.text} time={time} otherUser={otherUser} read={message.read}/>
-          </>
+          <SenderBubble
+            lastRead={lastReadID === message.id}
+            key={message.id}
+            text={message.text}
+            time={time}
+            otherUser={otherUser}
+            read={message.read}
+          />
         ) : (
-          <OtherUserBubble key={message.id} text={message.text} time={time} otherUser={otherUser} />
+          <OtherUserBubble
+            key={message.id}
+            text={message.text}
+            time={time}
+            otherUser={otherUser}
+          />
         );
       })}
     </Box>

@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const { User, Conversation, Message } = require("../../db/models");
-const { Op } = require("sequelize");
+const { Op, Sequelize } = require("sequelize");
 const onlineUsers = require("../../onlineUsers");
 
 // get all conversations for a user, include latest message text for preview, and all messages
@@ -18,7 +18,9 @@ router.get("/", async (req, res, next) => {
           user2Id: userId,
         },
       },
-      attributes: ["id"],
+      attributes: {
+        include: ["id", [Sequelize.fn("COUNT", Sequelize.where(Sequelize.col("messages.read"), false)), "unread"]]
+      },
       order: [[Message, "createdAt", "DESC"]],
       include: [
         { model: Message, order: ["createdAt", "DESC"] },
@@ -45,12 +47,13 @@ router.get("/", async (req, res, next) => {
           required: false,
         },
       ],
+      group: ["conversation.id", "user1.id", "user2.id","messages.id"]
     });
 
     for (let i = 0; i < conversations.length; i++) {
       const convo = conversations[i];
       const convoJSON = convo.toJSON();
-
+      console.log(convoJSON)
       // set a property "otherUser" so that frontend will have easier access
       if (convoJSON.user1) {
         convoJSON.otherUser = convoJSON.user1;
@@ -72,7 +75,7 @@ router.get("/", async (req, res, next) => {
       let otherUserLastReadID = -1;
       let unread = 0;
 
-      for (let j = 0; j < convoJSON.messages.length && cont; j++) {
+      for (let j = convoJSON.messages.length - 1; j >= 0 && cont; j--) {
         if (convoJSON.messages[j].senderId === userId && convoJSON.messages[j].read){
           otherUserLastReadID = convoJSON.messages[j].id;
         } 
@@ -126,7 +129,7 @@ router.put("/read", async (req, res, next) => {
     });
 
     if (!conversation) {
-      return res.sendStatus(401)
+      return res.sendStatus(403)
     }
 
     const convoJSON = conversation.toJSON();
@@ -145,7 +148,7 @@ router.put("/read", async (req, res, next) => {
       }
     })
     
-    res.sendStatus(200);
+    res.sendStatus(204);
   } catch (error) {
     next(error);
   }
