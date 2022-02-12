@@ -24,6 +24,15 @@ export const addMessageToStore = (state, payload) => {
   });
 };
 
+export const setReadMessage = (state, id) => {
+  return state.map((convo) => {
+    if (convo.otherUser.id === id) {
+      const convoCopy = { ...convo };
+      convoCopy.otherUser = { ...convoCopy.otherUser }
+    }
+  })
+}
+
 export const addOnlineUserToStore = (state, id) => {
   return state.map((convo) => {
     if (convo.otherUser.id === id) {

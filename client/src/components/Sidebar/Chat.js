@@ -1,8 +1,9 @@
-import React from "react";
+import React,{ useEffect, useState }  from "react";
 import { Box } from "@material-ui/core";
 import { BadgeAvatar, ChatContent } from "../Sidebar";
 import { makeStyles } from "@material-ui/core/styles";
 import { setActiveChat } from "../../store/activeConversation";
+import { readConvo } from "../../store/utils/thunkCreators";
 import { connect } from "react-redux";
 
 const useStyles = makeStyles((theme) => ({
@@ -22,31 +23,57 @@ const useStyles = makeStyles((theme) => ({
 const Chat = (props) => {
   const classes = useStyles();
   const { conversation } = props;
-  const { otherUser } = conversation;
+  const { otherUser, unread } = conversation;
+  const user = props.user || {};
+
+  const [unreadMsg, setUnreadMsg] = useState(0);
+
+  useEffect(() => {
+    setUnreadMsg(unread);
+  }, [])
+
 
   const handleClick = async (conversation) => {
-    await props.setActiveChat(conversation.otherUser.username);
+    const reqBody = {
+      id: user.id, 
+      otherUser: otherUser.id 
+    }
+
+    await Promise.all([
+      props.setActiveChat(conversation.otherUser.username), 
+      props.readConvo(reqBody)
+    ])
+    setUnreadMsg(0)
   };
 
   return (
-    <Box onClick={() => handleClick(conversation)} className={classes.root}>
+    <Box onClick={() => {handleClick(conversation)}} className={classes.root}>
       <BadgeAvatar
         photoUrl={otherUser.photoUrl}
         username={otherUser.username}
         online={otherUser.online}
         sidebar={true}
       />
-      <ChatContent conversation={conversation} />
+      <ChatContent conversation={conversation} unread={unreadMsg}/>
     </Box>
   );
 };
+
+const mapStateToProps = (state) => {
+  return {
+    user: state.user
+  }
+}
 
 const mapDispatchToProps = (dispatch) => {
   return {
     setActiveChat: (id) => {
       dispatch(setActiveChat(id));
+    },
+    readConvo: (body) => {
+      dispatch(readConvo(body));
     }
   };
 };
 
-export default connect(null, mapDispatchToProps)(Chat);
+export default connect(mapStateToProps, mapDispatchToProps)(Chat);

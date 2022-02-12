@@ -84,6 +84,11 @@ export const fetchConversations = () => async (dispatch) => {
   }
 };
 
+const readMessages = async (body) => {
+  const { data } = await axios.put("/api/conversations/read", body);
+  return data;
+}
+
 const saveMessage = async (body) => {
   const { data } = await axios.post("/api/messages", body);
   return data;
@@ -113,6 +118,15 @@ export const postMessage = (body) => async (dispatch) => {
     console.error(error);
   }
 };
+
+export const readConvo = (body) => async (dispatch) => {
+  try {
+    await readMessages(body);
+    
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 export const searchUsers = (searchTerm) => async (dispatch) => {
   try {
